@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Chatbot with FAISS + Ollama</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				margin: 20px;
+			}
+			#chat {
+				border: 1px solid #ccc;
+				padding: 10px;
+				height: 400px;
+				overflow-y: scroll;
+			}
+			.user {
+				color: blue;
+			}
+			.bot {
+				color: green;
+			}
+			.link {
+				color: darkorange;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Chatbot</h1>
+
+		<div>
+			<input
+				id="userInput"
+				type="text"
+				placeholder="Ask something..."
+				style="width: 300px" />
+			<button onclick="sendMessage()">Send</button>
+		</div>
+
+		<div id="chat"></div>
+
+		<script>
+			async function sendMessage() {
+				const msg = document.getElementById("userInput").value;
+				if (!msg) return;
+
+				const chatDiv = document.getElementById("chat");
+				chatDiv.innerHTML += `<p class="user"><b>You:</b> ${msg}</p>`;
+				document.getElementById("userInput").value = "";
+
+				try {
+					const res = await fetch(
+						"http://localhost:5000/search/title",
+						{
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ query: msg }),
+						}
+					);
+
+					const data = await res.json();
+
+					if (data.length === 0) {
+						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> No results found.</p>`;
+					} else {
+						// Join all results into one line
+						const combinedResults = data
+							.map(
+								(item) =>
+									`${item.title} by ${item.authors} (Rating: ${item.average_rating})`
+							)
+							.join(" | "); // you can change " | " to ", " or any separator
+
+						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> ${combinedResults}</p>`;
+					}
+				} catch (err) {
+					console.error(err);
+					chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> Error fetching results.</p>`;
+				}
+
+				chatDiv.scrollTop = chatDiv.scrollHeight;
+			}
+		</script>
+	</body>
+</html>

@@ -1,0 +1,6 @@
+flask
+flask_cors
+pandas
+faiss-cpu
+sentence-transformers
+requests

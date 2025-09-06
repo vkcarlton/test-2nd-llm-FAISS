@@ -1,0 +1,16 @@
+services:
+    backend:
+        build: ./backend
+        container_name: faiss-backend
+        ports:
+            - "5000:5000"
+        environment:
+            - OPENAI_API_KEY=your_openai_api_key
+        volumes:
+            - ./backend/data.csv:/app/data.csv
+
+    frontend:
+        build: ./frontend
+        container_name: chatbot-frontend
+        ports:
+            - "8080:80"
