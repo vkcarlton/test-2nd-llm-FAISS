@@ -19,11 +19,12 @@ model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 df = pd.read_csv("data.csv", on_bad_lines='warn', delimiter=',')
 
 # Create a combined column for easier reference if needed
-df['combined'] = df["title"].astype(str) + ', ' + df['authors'].astype(str) + ', ' + df['average_rating'].astype(str)
+df['combined'] = df["title"].astype(str) + 'by ' + df['authors'].astype(str)
 
 # Embed dataset
 title_embeddings = model.encode(df['title'].astype(str).tolist(), convert_to_numpy=True)
 authors_embeddings = model.encode(df['authors'].astype(str).tolist(), convert_to_numpy=True)
+combined_embeddings = model.encode(df['combined'].astype(str).tolist(), convert_to_numpy=True)
 
 # Build FAISS index for titles
 title_dimension = title_embeddings.shape[1]
@@ -35,6 +36,11 @@ authors_dimension = authors_embeddings.shape[1]
 authors_index = faiss.IndexFlatL2(authors_dimension)
 authors_index.add(authors_embeddings)
 
+# Build FAISS index for combined
+combined_dimension = combined_embeddings.shape[1]
+combined_index = faiss.IndexFlatL2(combined_dimension)
+combined_index.add(combined_embeddings)
+
 app = Flask(__name__)
 CORS(app)
 
@@ -43,8 +49,8 @@ CORS(app)
 def home():
     return render_template("index.html")
 
-@app.route("/search/llm", methods=["POST"])
-def search_llm():
+@app.route("/search/llm/title", methods=["POST"])
+def search_llm_title():
     query = request.json.get("query")
     if not query:
         return jsonify({"error": "No query provided"}), 400
@@ -60,6 +66,68 @@ def search_llm():
         prompt_text += f"- {r['title']} by {r['authors']} (Rating: {r['average_rating']})\n"
     prompt_text += "\nAnswer the user's question using these search results for your information. Only suggest the number of books requested by the user."
 
+    # 3. Get LLM response
+    llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
+			json= {
+				"model": "llama3",
+				"prompt": prompt_text,
+                "stream": False
+                })
+    if llm_response.status_code != 200:
+        return jsonify({
+            "error": f"Ollama returned {llm_response.status_code}",
+            "details": llm_response.text
+        }), 500
+
+    # 4. Parse Ollama response JSON
+    try:
+        data = llm_response.json()
+        answer_text = data.get("response", "")
+    except Exception:
+        answer_text = llm_response.text  # fallback
+
+    return jsonify({
+        "query": query,
+        "matches": [
+            {
+                "title": r["title"],
+                "authors": r["authors"],
+                "average_rating": r["average_rating"]
+            }
+            for r in results
+        ],
+        "llm_answer": answer_text
+    })
+    
+    # axios.get(fetch(OLLAMA_API, {
+	# 		method: "POST",
+	# 		headers: { "Content-Type": "application/json" },
+	# 		body: JSON.stringify({
+	# 			model: "llama3",
+	# 			prompt: userPrompt,
+	# 			stream: false,
+	# 		}),
+	# 	});
+
+    # return jsonify({"answer": answer_text})
+    
+@app.route("/search/llm/combined", methods=["POST"])
+def search_llm_combined():
+    query = request.json.get("query")
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
+
+    # 1. FAISS search
+    query_vec = model.encode([query], convert_to_numpy=True)
+    D, I = combined_index.search(query_vec, k=25)
+    results = [df.iloc[i] for i in I[0]]
+
+    # 2. Build prompt for LLM
+    prompt_text = f"You are a bookstore chatbot, you will be given the user's question as well as semantic search results through the database of books that the bookstore has. Use this information to best answer the User's question. User asked: '{query}'\nTop matches:\n"
+    for r in results:
+        prompt_text += f"- {r['title']} by {r['authors']} (Rating: {r['average_rating']})\n"
+    prompt_text += "\nFollow the user's prompt to the best of your ability."
+    print(prompt_text)
     # 3. Get LLM response
     llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
 			json= {
