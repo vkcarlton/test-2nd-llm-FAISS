@@ -6,9 +6,9 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install a smaller CPU-only torch build
-RUN pip install --no-cache-dir torch torchvision
+RUN pip install torch torchvision
     
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Copy code and data
 COPY . .

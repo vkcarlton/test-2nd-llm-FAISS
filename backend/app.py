@@ -2,8 +2,16 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import pandas as pd
 import faiss
+import asyncio
+import requests
+import os
+import json
 from sentence_transformers import SentenceTransformer
+from dotenv import dotenv_values
 
+
+OLLAMA_API =  os.environ['OLLAMA_API']
+print(OLLAMA_API)
 # Load local embedding model
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
@@ -30,9 +38,72 @@ authors_index.add(authors_embeddings)
 app = Flask(__name__)
 CORS(app)
 
+
 @app.route("/")
 def home():
     return render_template("index.html")
+
+@app.route("/search/llm", methods=["POST"])
+def search_llm():
+    query = request.json.get("query")
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
+
+    # 1. FAISS search
+    query_vec = model.encode([query], convert_to_numpy=True)
+    D, I = title_index.search(query_vec, k=5)
+    results = [df.iloc[i] for i in I[0]]
+
+    # 2. Build prompt for LLM
+    prompt_text = f"User asked: '{query}'\nTop matches:\n"
+    for r in results:
+        prompt_text += f"- {r['title']} by {r['authors']} (Rating: {r['average_rating']})\n"
+    prompt_text += "\nAnswer the user's question using these search results for your information. Only suggest the number of books requested by the user."
+
+    # 3. Get LLM response
+    llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
+			json= {
+				"model": "llama3",
+				"prompt": prompt_text,
+                "stream": False
+                })
+    if llm_response.status_code != 200:
+        return jsonify({
+            "error": f"Ollama returned {llm_response.status_code}",
+            "details": llm_response.text
+        }), 500
+
+    # 4. Parse Ollama response JSON
+    try:
+        data = llm_response.json()
+        answer_text = data.get("response", "")
+    except Exception:
+        answer_text = llm_response.text  # fallback
+
+    return jsonify({
+        "query": query,
+        "matches": [
+            {
+                "title": r["title"],
+                "authors": r["authors"],
+                "average_rating": r["average_rating"]
+            }
+            for r in results
+        ],
+        "llm_answer": answer_text
+    })
+    
+    # axios.get(fetch(OLLAMA_API, {
+	# 		method: "POST",
+	# 		headers: { "Content-Type": "application/json" },
+	# 		body: JSON.stringify({
+	# 			model: "llama3",
+	# 			prompt: userPrompt,
+	# 			stream: false,
+	# 		}),
+	# 	});
+
+    # return jsonify({"answer": answer_text})
 
 @app.route("/search/title", methods=["POST"])
 def search_title():
@@ -77,6 +148,8 @@ def search_authors():
             "average_rating": row["average_rating"]
         })
     return jsonify(results)
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

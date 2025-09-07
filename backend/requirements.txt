@@ -1,6 +1,9 @@
 flask
 flask_cors
+ollama
 pandas
+dotenv
+requests
 faiss-cpu
 sentence-transformers
 requests

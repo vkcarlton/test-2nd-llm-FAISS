@@ -49,7 +49,7 @@
 
 				try {
 					const res = await fetch(
-						"http://localhost:5000/search/title",
+						"http://localhost:5000/search/llm",
 						{
 							method: "POST",
 							headers: { "Content-Type": "application/json" },
@@ -62,15 +62,15 @@
 					if (data.length === 0) {
 						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> No results found.</p>`;
 					} else {
-						// Join all results into one line
-						const combinedResults = data
-							.map(
-								(item) =>
-									`${item.title} by ${item.authors} (Rating: ${item.average_rating})`
-							)
-							.join(" | "); // you can change " | " to ", " or any separator
+						// // Join all results into one line
+						// const combinedResults = data
+						// 	.map(
+						// 		(item) =>
+						// 			`${item.title} by ${item.authors} (Rating: ${item.average_rating})`
+						// 	)
+						// 	.join(" | "); // you can change " | " to ", " or any separator
 
-						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> ${combinedResults}</p>`;
+						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> ${data.llm_answer}</p>`;
 					}
 				} catch (err) {
 					console.error(err);

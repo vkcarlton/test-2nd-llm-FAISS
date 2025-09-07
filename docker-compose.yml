@@ -1,16 +1,45 @@
 services:
+    ollama:
+        image: ollama/ollama
+        container_name: ollama
+        restart: unless-stopped
+        ports:
+            - "11434:11434"
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: all
+                          capabilities: [gpu]
+        entrypoint:
+            [
+                "/bin/bash",
+                "-c",
+                "ollama serve & sleep 5 && ollama pull llama3 && wait",
+            ]
+        volumes:
+            - ollama-storage:/root/.ollama
+
     backend:
         build: ./backend
         container_name: faiss-backend
         ports:
             - "5000:5000"
         environment:
-            - OPENAI_API_KEY=your_openai_api_key
+            - OLLAMA_API=http://ollama:11434/api/generate
         volumes:
             - ./backend/data.csv:/app/data.csv
+        depends_on:
+            - ollama
 
     frontend:
         build: ./frontend
         container_name: chatbot-frontend
+        environment:
+            - BACKEND_API=http://backend:5000/chat
         ports:
             - "8080:80"
+
+volumes:
+    ollama-storage:
