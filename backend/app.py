@@ -69,7 +69,7 @@ def search_llm_title():
     # 3. Get LLM response
     llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
 			json= {
-				"model": "llama3",
+				"model": "deepseek-llm:7b",
 				"prompt": prompt_text,
                 "stream": False
                 })
@@ -126,12 +126,12 @@ def search_llm_combined():
     prompt_text = f"You are a bookstore chatbot, you will be given the user's question as well as semantic search results through the database of books that the bookstore has. Use this information to best answer the User's question. User asked: '{query}'\nTop matches:\n"
     for r in results:
         prompt_text += f"- {r['title']} by {r['authors']} (Rating: {r['average_rating']})\n"
-    prompt_text += "\nFollow the user's prompt to the best of your ability."
+    prompt_text += "\nFollow the user's prompt to the best of your ability. Your reply will be fed directly to the user, please reply accordingly. Ignore the search results entirely if they dont ask about books."
     print(prompt_text)
     # 3. Get LLM response
     llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
 			json= {
-				"model": "llama3",
+				"model": "deepseek-llm:7b",
 				"prompt": prompt_text,
                 "stream": False
                 })

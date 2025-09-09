@@ -16,7 +16,7 @@ services:
             [
                 "/bin/bash",
                 "-c",
-                "ollama serve & sleep 5 && ollama pull llama3 && wait",
+                "ollama serve & sleep 5 && ollama pull deepseek-llm:7b && wait",
             ]
         volumes:
             - ollama-storage:/root/.ollama
@@ -32,14 +32,6 @@ services:
             - ./backend/data.csv:/app/data.csv
         depends_on:
             - ollama
-
-    frontend:
-        build: ./frontend
-        container_name: chatbot-frontend
-        environment:
-            - BACKEND_API=http://backend:5000/chat
-        ports:
-            - "8080:80"
 
 volumes:
     ollama-storage:

@@ -5,8 +5,8 @@ WORKDIR /app
 # Install dependencies
 COPY requirements.txt .
 
-# Install a smaller CPU-only torch build
-RUN pip install torch torchvision
+# Installs cpu only lighter version of torch
+RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
     
 RUN pip install -r requirements.txt
 
