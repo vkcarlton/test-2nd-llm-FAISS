@@ -33,7 +33,8 @@ services:
         environment:
             - OLLAMA_API=http://ollama:11434/api/generate
             - OLLAMA_MODEL=${OLLAMA_MODEL}
-        ports: ["5050:5050"]
+        ports:
+            - "5050:5050"
         volumes:
             - ./backend/data.csv:/app/data.csv
         depends_on:
