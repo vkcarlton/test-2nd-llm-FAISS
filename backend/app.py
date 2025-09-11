@@ -11,6 +11,8 @@ from dotenv import dotenv_values
 
 
 OLLAMA_API =  os.environ['OLLAMA_API']
+OLLAMA_MODEL =  os.environ['OLLAMA_MODEL']
+
 print(OLLAMA_API)
 # Load local embedding model
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -69,7 +71,7 @@ def search_llm_title():
     # 3. Get LLM response
     llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
 			json= {
-				"model": "deepseek-llm:7b",
+				"model": "gemma3:4b",
 				"prompt": prompt_text,
                 "stream": False
                 })
@@ -131,7 +133,7 @@ def search_llm_combined():
     # 3. Get LLM response
     llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
 			json= {
-				"model": "deepseek-llm:7b",
+				"model": "gemma3:4b",
 				"prompt": prompt_text,
                 "stream": False
                 })

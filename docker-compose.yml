@@ -1,4 +1,10 @@
 services:
+    cloudflared:
+        image: cloudflare/cloudflared:latest
+        restart: unless-stopped
+        command: "tunnel --no-autoupdate run --url http://backend:5000 --token ${CLOUDFLARE_TOKEN}"
+        depends_on:
+            - backend
     ollama:
         image: ollama/ollama
         container_name: ollama
@@ -16,7 +22,7 @@ services:
             [
                 "/bin/bash",
                 "-c",
-                "ollama serve & sleep 5 && ollama pull deepseek-llm:7b && wait",
+                "ollama serve & sleep 5 && ollama pull ${OLLAMA_MODEL} && wait",
             ]
         volumes:
             - ollama-storage:/root/.ollama
@@ -28,6 +34,7 @@ services:
             - "5000:5000"
         environment:
             - OLLAMA_API=http://ollama:11434/api/generate
+            - OLLAMA_MODEL=OLLAMA_MODEL
         volumes:
             - ./backend/data.csv:/app/data.csv
         depends_on:
