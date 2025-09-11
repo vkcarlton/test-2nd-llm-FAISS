@@ -48,14 +48,11 @@
 				document.getElementById("userInput").value = "";
 
 				try {
-					const res = await fetch(
-						"http://localhost:5000/search/llm/combined",
-						{
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({ query: msg }),
-						}
-					);
+					const res = await fetch("/search/llm/combined", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ query: msg }),
+					});
 
 					const data = await res.json();
 

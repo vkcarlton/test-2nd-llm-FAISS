@@ -14,6 +14,7 @@ OLLAMA_API =  os.environ['OLLAMA_API']
 OLLAMA_MODEL =  os.environ['OLLAMA_MODEL']
 
 print(OLLAMA_API)
+print(OLLAMA_MODEL)
 # Load local embedding model
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
@@ -71,7 +72,7 @@ def search_llm_title():
     # 3. Get LLM response
     llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
 			json= {
-				"model": "gemma3:4b",
+				"model": OLLAMA_MODEL,
 				"prompt": prompt_text,
                 "stream": False
                 })
@@ -133,7 +134,7 @@ def search_llm_combined():
     # 3. Get LLM response
     llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
 			json= {
-				"model": "gemma3:4b",
+				"model": OLLAMA_MODEL,
 				"prompt": prompt_text,
                 "stream": False
                 })
@@ -222,4 +223,4 @@ def search_authors():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5050)

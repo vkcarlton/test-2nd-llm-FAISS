@@ -2,7 +2,7 @@ services:
     cloudflared:
         image: cloudflare/cloudflared:latest
         restart: unless-stopped
-        command: "tunnel --no-autoupdate run --url http://backend:5000 --token ${CLOUDFLARE_TOKEN}"
+        command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN}
         depends_on:
             - backend
     ollama:
@@ -29,12 +29,11 @@ services:
 
     backend:
         build: ./backend
-        container_name: faiss-backend
-        ports:
-            - "5000:5000"
+        container_name: backend
         environment:
             - OLLAMA_API=http://ollama:11434/api/generate
-            - OLLAMA_MODEL=OLLAMA_MODEL
+            - OLLAMA_MODEL=${OLLAMA_MODEL}
+        ports: ["5050:5050"]
         volumes:
             - ./backend/data.csv:/app/data.csv
         depends_on:

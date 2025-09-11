@@ -13,7 +13,7 @@ RUN pip install -r requirements.txt
 # Copy code and data
 COPY . .
 
-EXPOSE 5000
+EXPOSE 5050
 
 # Run Flask
 CMD ["python", "app.py"]
