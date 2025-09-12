@@ -18,17 +18,13 @@ jobs:
 
             # 3. Build and start Docker Compose
             - name: Build and run Docker Compose
+              env:
+                  OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL }}
+                  CLOUDFLARE_TOKEN: ${{secrets.OLLAMA_MODEL}}
+                  USE_GPU: ${{ vars.USE_GPU }}
               run: |
                   if [ "$USE_GPU" = "true" ]; then
                     docker compose -f docker-compose.gpu.yml up --build -d --force-recreate --remove-orphans
                   else
                     docker compose -f docker-compose.yml up --build -d --force-recreate --remove-orphans
                   fi
-              env:
-                  OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL }}
-                  CLOUDFLARE_TOKEN: ${{secrets.OLLAMA_MODEL}}
-                  USE_GPU: ${{ vars.USE_GPU }}
-
-            # 4. Optional: prune old Docker images to save space
-            - name: Docker prune
-              run: docker system prune -f
