@@ -20,7 +20,7 @@ jobs:
             - name: Build and run Docker Compose
               env:
                   OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL }}
-                  CLOUDFLARE_TOKEN: ${{secrets.OLLAMA_MODEL}}
+                  CLOUDFLARE_TOKEN: ${{secrets.CLOUDFLARE_TOKEN}}
                   USE_GPU: ${{ vars.USE_GPU }}
               run: |
                   if [ "$USE_GPU" = "true" ]; then
