@@ -81,7 +81,9 @@ def search_llm_combined():
 			json= {
 				"model": OLLAMA_MODEL,
 				"prompt": prompt_text,
-                "stream": False
+                "stream": False,
+                "max_tokens": 200,
+                "context": 1024
                 })
     if llm_response.status_code != 200:
         return jsonify({
