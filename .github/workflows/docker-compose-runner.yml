@@ -27,9 +27,9 @@ jobs:
             - name: Build and run Docker Compose
               run: |
                   if [ "$USE_GPU" = "true" ]; then
-                    docker compose -f docker-compose.gpu.yml up --build -d
+                    docker compose -f docker-compose.gpu.yml up --build -d --force-recreate --remove-orphans
                   else
-                    docker compose -f docker-compose.yml up --build -d
+                    docker compose -f docker-compose.yml up --build -d --force-recreate --remove-orphans
                   fi
 
             # 4. Optional: prune old Docker images to save space
