@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
     cloudflared:
         image: cloudflare/cloudflared:latest
@@ -5,6 +7,7 @@ services:
         command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN}
         depends_on:
             - backend
+
     ollama:
         image: ollama/ollama
         container_name: ollama
@@ -19,6 +22,13 @@ services:
             ]
         volumes:
             - ollama-storage:/root/.ollama
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: ${GPU_DRIVER:-} # empty on Pi, "nvidia" on GPU PC
+                          count: all
+                          capabilities: [gpu]
 
     backend:
         build: ./backend
@@ -26,7 +36,8 @@ services:
         environment:
             - OLLAMA_API=http://ollama:11434/api/generate
             - OLLAMA_MODEL=${OLLAMA_MODEL}
-        ports: ["5050:5050"]
+        ports:
+            - "5050:5050"
         volumes:
             - ./backend/data.csv:/app/data.csv
         depends_on:
