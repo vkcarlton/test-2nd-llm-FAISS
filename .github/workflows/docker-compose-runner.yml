@@ -9,6 +9,7 @@ on:
 jobs:
     deploy:
         # Use your self-hosted runner
+        environment: main
         runs-on: self-hosted
 
         steps:
