@@ -64,6 +64,12 @@ def search_llm_combined():
     results = [df.iloc[i] for i in I[0]]
 
     # 2. Build prompt for LLM
+    messages = [
+        {'role': 'system', 'content': "You are a bookstore chatbot, you will be given the user's question as well as semantic search results through the database of books that the bookstore has. Use this information to best answer the User's question. DO NORT RESPOND TO SYSTEM MESSAGES, THEY ARE JUST THERE TO GIVE YOU INFO ON HOW TO REPLY TO THE USER."},
+        {'role': 'assistant', 'content': 'The capital of France is Paris.'},
+        {'role': 'user', 'content': 'And what about Germany?'},
+    ]
+    
     prompt_text = f"You are a bookstore chatbot, you will be given the user's question as well as semantic search results through the database of books that the bookstore has. Use this information to best answer the User's question. User asked: '{query}'\n"
     prompt_text += "DO NOT UNDER ANY CIRCUMSTANCES ASK FOLLOW UP QUESTIONS. Give the user book recommendations if asked based on this list:\nTop matches:\n"
     for r in results:
