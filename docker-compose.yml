@@ -5,19 +5,13 @@ services:
         command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN}
         depends_on:
             - backend
+
     ollama:
         image: ollama/ollama
         container_name: ollama
         restart: unless-stopped
         ports:
             - "11434:11434"
-        deploy:
-            resources:
-                reservations:
-                    devices:
-                        - driver: ${GPU_DRIVER}
-                          count: all
-                          capabilities: [gpu]
         entrypoint:
             [
                 "/bin/bash",
@@ -26,6 +20,30 @@ services:
             ]
         volumes:
             - ollama-storage:/root/.ollama
+        profiles: ["default"] # CPU-only by default
+
+    ollama-gpu:
+        image: ollama/ollama
+        container_name: ollama-gpu
+        restart: unless-stopped
+        ports:
+            - "11434:11434"
+        entrypoint:
+            [
+                "/bin/bash",
+                "-c",
+                "ollama serve & sleep 5 && ollama pull ${OLLAMA_MODEL} && wait",
+            ]
+        volumes:
+            - ollama-storage:/root/.ollama
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: all
+                          capabilities: [gpu]
+        profiles: ["gpu"]
 
     backend:
         build: ./backend
@@ -37,8 +55,5 @@ services:
             - "5050:5050"
         volumes:
             - ./backend/data.csv:/app/data.csv
-        depends_on:
-            - ollama
-
 volumes:
     ollama-storage:
