@@ -15,7 +15,7 @@ services:
             resources:
                 reservations:
                     devices:
-                        - driver: nvidia
+                        - driver: ${GPU_DRIVER}
                           count: all
                           capabilities: [gpu]
         entrypoint:
