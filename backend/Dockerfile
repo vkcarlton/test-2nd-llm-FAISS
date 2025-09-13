@@ -15,5 +15,8 @@ COPY . .
 
 EXPOSE 5050
 
+ENV OLLAMA_API=http://ollama:11434/api/generate
+ENV OLLAMA_MODEL=gemma3
+
 # Run Flask
 CMD ["python", "app.py"]
