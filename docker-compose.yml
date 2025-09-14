@@ -23,6 +23,7 @@ services:
     backend:
         build: ./backend
         container_name: backend
+        restart: unless-stopped
         environment:
             - OLLAMA_API=http://ollama:11434/api/generate
             - OLLAMA_MODEL=${OLLAMA_MODEL}
