@@ -45,7 +45,7 @@ def llm_call(messages, tools, stream):
                 "stream": stream,
                 })
     data = llm_response.json()
-    print(assistant_msg, flush=True)
+    print(data, flush=True)
     assistant_msg = data["message"]
     messages.append(assistant_msg)
     
