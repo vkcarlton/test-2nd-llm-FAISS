@@ -89,7 +89,7 @@ def search_llm_combined():
     
     results_text = "Give the user book recommendations if asked based on this list:\nTop matches:\n"
     messages = [
-        {'role': 'system', 'content': "You are a bookstore chatbot, you will be given the user's question. You can use the book_search tool to find books if the user asks about it. ONLY USE book_search WHEN NEEDED. You must use reply tool to reply to the end user. Only give the user the number of books they ask for."},
+        {'role': 'system', 'content': "You are a bookstore chatbot, you will be given the user's question. You can use the book_search tool to find books if the user asks about it. ONLY USE book_search WHEN NEEDED. You must use reply tool to reply to the end user. Only give the user the number of books they ask for. Do not use <think> just print the final output without thinking."},
         {'role': 'user', 'content': query},
     ]
     
