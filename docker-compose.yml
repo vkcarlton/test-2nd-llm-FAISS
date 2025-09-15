@@ -25,7 +25,7 @@ services:
         container_name: backend
         restart: unless-stopped
         environment:
-            - OLLAMA_API=http://ollama:11434/api/generate
+            - OLLAMA_API=http://ollama:11434/api/chat
             - OLLAMA_MODEL=${OLLAMA_MODEL}
         ports: ["5050:5050"]
         volumes:

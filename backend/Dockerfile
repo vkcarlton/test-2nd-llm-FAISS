@@ -10,8 +10,15 @@ RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/c
     
 RUN pip install -r requirements.txt
 
+COPY data.csv .
+COPY build_faiss.py .
+
+RUN python build_faiss.py
+
 # Copy code and data
 COPY . .
+
+
 
 EXPOSE 5050
 

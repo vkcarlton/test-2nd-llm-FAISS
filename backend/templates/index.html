@@ -55,7 +55,6 @@
 					});
 
 					const data = await res.json();
-
 					if (data.length === 0) {
 						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> No results found.</p>`;
 					} else {
@@ -67,7 +66,7 @@
 						// 	)
 						// 	.join(" | "); // you can change " | " to ", " or any separator
 
-						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> ${data.llm_answer}</p>`;
+						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> ${data.llm_response}</p>`;
 					}
 				} catch (err) {
 					console.error(err);

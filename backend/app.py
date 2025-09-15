@@ -13,40 +13,66 @@ from dotenv import dotenv_values
 OLLAMA_API =  os.environ['OLLAMA_API']
 OLLAMA_MODEL =  os.environ['OLLAMA_MODEL']
 
-print(OLLAMA_API)
-print(OLLAMA_MODEL)
 # Load local embedding model
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-# Load your dataset
-df = pd.read_csv("data.csv", on_bad_lines='warn', delimiter=',')
-
-# Create a combined column for easier reference if needed
-df['combined'] = df["title"].astype(str) + 'by ' + df['authors'].astype(str)
-
-# Embed dataset
-title_embeddings = model.encode(df['title'].astype(str).tolist(), convert_to_numpy=True)
-authors_embeddings = model.encode(df['authors'].astype(str).tolist(), convert_to_numpy=True)
-combined_embeddings = model.encode(df['combined'].astype(str).tolist(), convert_to_numpy=True)
-
-# Build FAISS index for titles
-title_dimension = title_embeddings.shape[1]
-title_index = faiss.IndexFlatL2(title_dimension)
-title_index.add(title_embeddings)
-
-# Build FAISS index for authors
-authors_dimension = authors_embeddings.shape[1]
-authors_index = faiss.IndexFlatL2(authors_dimension)
-authors_index.add(authors_embeddings)
-
-# Build FAISS index for combined
-combined_dimension = combined_embeddings.shape[1]
-combined_index = faiss.IndexFlatL2(combined_dimension)
-combined_index.add(combined_embeddings)
+# Load prebuilt index
+combined_index = faiss.read_index("combined.index")
+df = pd.read_pickle("data.pkl")
 
 app = Flask(__name__)
 CORS(app)
 
+def faiss_lookup(query:str, k=10):
+    query_vec=model.encode([query],convert_to_numpy=True)
+    D, I = combined_index.search(query_vec, k=k)
+    results = []
+    for i in I[0]:
+        row=df.iloc[i]
+        results.append({
+            "title": row["title"],
+            "authors": row["authors"],
+            "average_rating": row["average_rating"]
+        })
+    return results
+
+def llm_call(messages, tools, stream):
+    llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
+			json= {
+				"model": OLLAMA_MODEL,
+                "messages": messages,
+                "tools": tools,
+                "stream": stream,
+                })
+    data = llm_response.json()
+    assistant_msg = data["message"]
+    messages.append(assistant_msg)
+    
+    if "tool_calls" in assistant_msg:
+        print("Book_Search called", flush=True)
+        print(assistant_msg, flush=True)
+        for call in assistant_msg["tool_calls"]:
+            if call["function"]["name"] == "book_search":
+                if call["function"]["arguments"]["query"]:
+                    args = call["function"]["arguments"]
+                    tool_result = faiss_lookup(args["query"])
+                    # Append tool output to the chat history
+                    messages.append({
+                        "role": "tool",
+                        "content": str(tool_result),
+                        "tool_name": "book_search"
+                    })
+                    return llm_call(messages,tools,stream)
+            if call["function"]["name"] == "reply":
+                return call["function"]["arguments"]["reply"]
+    else:
+        print(assistant_msg, flush=True)
+        reply = assistant_msg["content"]
+        if "<think>" in reply:
+            end_index = reply.index("</think>")
+            reply = reply[end_index+9:]
+            print(reply, flush=True)
+        return reply
 
 @app.route("/")
 def home():
@@ -58,102 +84,58 @@ def search_llm_combined():
     if not query:
         return jsonify({"error": "No query provided"}), 400
 
-    # 1. FAISS search
-    query_vec = model.encode([query], convert_to_numpy=True)
-    D, I = combined_index.search(query_vec, k=25)
-    results = [df.iloc[i] for i in I[0]]
-
-    # 2. Build prompt for LLM
+    
+    
+    results_text = "Give the user book recommendations if asked based on this list:\nTop matches:\n"
     messages = [
-        {'role': 'system', 'content': "You are a bookstore chatbot, you will be given the user's question as well as semantic search results through the database of books that the bookstore has. Use this information to best answer the User's question. DO NORT RESPOND TO SYSTEM MESSAGES, THEY ARE JUST THERE TO GIVE YOU INFO ON HOW TO REPLY TO THE USER."},
-        {'role': 'assistant', 'content': 'The capital of France is Paris.'},
-        {'role': 'user', 'content': 'And what about Germany?'},
+        {'role': 'system', 'content': "You are a bookstore chatbot, you will be given the user's question. You can use the book_search tool to find books if the user asks about it. ONLY USE book_search WHEN NEEDED. You must use reply tool to reply to the end user. Only give the user the number of books they ask for."},
+        {'role': 'user', 'content': query},
     ]
     
-    prompt_text = f"You are a bookstore chatbot, you will be given the user's question as well as semantic search results through the database of books that the bookstore has. Use this information to best answer the User's question. User asked: '{query}'\n"
-    prompt_text += "DO NOT UNDER ANY CIRCUMSTANCES ASK FOLLOW UP QUESTIONS. Give the user book recommendations if asked based on this list:\nTop matches:\n"
-    for r in results:
-        prompt_text += f"- {r['title']} by {r['authors']} (Rating: {r['average_rating']})\n"
+    tools = [{
+        "type": "function",
+            "function": {
+                "name": "book_search",
+                "description": "Searches the bookstore database for book titles and authors using semantic search on 'query'. Returns a list of books in no particular order. Choose only the most applicable ones.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search terms that should be used to find a book for the user."
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+    }, {
+        "type": "function",
+            "function": {
+                "name": "reply",
+                "description": "Sends the imput to the user as a reply to their question. Use if you do not need any other tools.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "reply": {
+                            "type": "string",
+                            "description": "Reply to send to the user."
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+    }]
     
-    print(prompt_text)
     # 3. Get LLM response
-    llm_response = requests.post(OLLAMA_API, headers= { "Content-Type": "application/json" },
-			json= {
-				"model": OLLAMA_MODEL,
-				"prompt": prompt_text,
-                "stream": False,
-                })
-    if llm_response.status_code != 200:
-        return jsonify({
-            "error": f"Ollama returned {llm_response.status_code}",
-            "details": llm_response.text
-        }), 500
-
-    # 4. Parse Ollama response JSON
-    try:
-        data = llm_response.json()
-        answer_text = data.get("response", "")
-    except Exception:
-        answer_text = llm_response.text  # fallback
-
+    assistant_msg = llm_call(messages,tools,False)
+        
+    # else:
     return jsonify({
         "query": query,
-        "matches": [
-            {
-                "title": r["title"],
-                "authors": r["authors"],
-                "average_rating": r["average_rating"]
-            }
-            for r in results
-        ],
-        "llm_answer": answer_text
+        "llm_response": assistant_msg,
     })
+
     
-@app.route("/search/title", methods=["POST"])
-def search_title():
-    query = request.json.get("query")
-    print(request)
-    if not query:
-        return jsonify({"error": "No query provided"}), 400
-
-    # Encode query locally
-    query_vec = model.encode([query], convert_to_numpy=True)
-    D, I = title_index.search(query_vec, k=10)
-
-    # Return full rows as dicts
-    results = []
-    for idx in I[0]:
-        row = df.iloc[idx]
-        results.append({
-            "title": row["title"],
-            "authors": row["authors"],
-            "average_rating": row["average_rating"]
-        })
-        print(results)
-    return jsonify(results)
-
-@app.route("/search/authors", methods=["POST"])
-def search_authors():
-    query = request.json.get("query")
-    if not query:
-        return jsonify({"error": "No query provided"}), 400
-
-    # Encode query locally
-    query_vec = model.encode([query], convert_to_numpy=True)
-    D, I = authors_index.search(query_vec, k=10)
-
-    # Return full rows as dicts
-    results = []
-    for idx in I[0]:
-        row = df.iloc[idx]
-        results.append({
-            "title": row["title"],
-            "authors": row["authors"],
-            "average_rating": row["average_rating"]
-        })
-    return jsonify(results)
-
-
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5050)
+    app.run(host="0.0.0.0", port=5050, debug=True)
