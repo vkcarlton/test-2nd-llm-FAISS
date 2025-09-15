@@ -64,7 +64,7 @@ def llm_call(messages, tools, stream):
                         "tool_name": "book_search"
                     })
                     return llm_call(messages,tools,stream)
-            if call["function"]["name"] == "reply":
+            if call["function"]["arguments"]["reply"]:
                 return call["function"]["arguments"]["reply"]
     else:
         print(assistant_msg, flush=True)
