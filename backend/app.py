@@ -69,7 +69,7 @@ def llm_call(messages, tools, stream):
     else:
         print(assistant_msg, flush=True)
         reply = assistant_msg["content"]
-        if "<think>" in reply:
+        if "</think>" in reply:
             end_index = reply.index("</think>")
             reply = reply[end_index+9:]
             print(reply, flush=True)
