@@ -63,7 +63,7 @@ def llm_call(messages, tools, stream):
                         "content": str(tool_result),
                         "tool_name": "book_search"
                     })
-                    return llm_call(messages,tools,stream)
+                    return llm_call(messages,[tools[1]],stream)
             if call["function"]["arguments"]["reply"]:
                 return call["function"]["arguments"]["reply"]
     else:
@@ -89,7 +89,7 @@ def search_llm_combined():
     
     results_text = "Give the user book recommendations if asked based on this list:\nTop matches:\n"
     messages = [
-        {'role': 'system', 'content': "You are a bookstore chatbot, you will be given the user's question. You can use the book_search tool to find books if the user asks about it. ONLY USE book_search WHEN NEEDED. You must use reply tool to reply to the end user. Only give the user the number of books they ask for. Do not use <think> just print the final output without thinking."},
+        {'role': 'system', 'content': "You are a bookstore chatbot, you will be given the user's question. You can use the book_search tool to find books if the user asks about it. ONLY USE book_search WHEN NEEDED. Only give the user the number of books they ask for."},
         {'role': 'user', 'content': query},
     ]
     
