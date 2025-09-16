@@ -70,7 +70,7 @@
 						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> ${data.llm_response}</p>`;
 						console.log(
 							"It took:" +
-								(start_timestamp - Date.now()) / 1000 +
+								(Date.now() - start_timestamp) / 1000 +
 								"seconds"
 						);
 					}
