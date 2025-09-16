@@ -85,9 +85,6 @@ def search_llm_combined():
     if not query:
         return jsonify({"error": "No query provided"}), 400
 
-    
-    
-    results_text = "Give the user book recommendations if asked based on this list:\nTop matches:\n"
     messages = [
         {'role': 'system', 'content': "You are a bookstore chatbot, you will be given the user's question. You can use the book_search tool to find books if the user asks about it. ONLY USE book_search WHEN NEEDED. Only give the user the number of books they ask for."},
         {'role': 'user', 'content': query},
