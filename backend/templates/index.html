@@ -48,7 +48,7 @@
 				document.getElementById("userInput").value = "";
 
 				try {
-					console.log("button pressed.");
+					console.log("button pressed." + Date.now());
 					const res = await fetch("/search/llm/combined", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
@@ -68,7 +68,7 @@
 						// 	.join(" | "); // you can change " | " to ", " or any separator
 
 						chatDiv.innerHTML += `<p class="bot"><b>Bot:</b> ${data.llm_response}</p>`;
-						console.log("Response received");
+						console.log("Response received" + Date.now());
 					}
 				} catch (err) {
 					console.error(err);
