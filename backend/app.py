@@ -86,7 +86,7 @@ def search_llm_combined():
         return jsonify({"error": "No query provided"}), 400
 
     messages = [
-        {'role': 'system', 'content': "You are a bookstore chatbot, you will be given the user's question. You can use the book_search tool to find books if the user asks about it. ONLY USE book_search WHEN NEEDED. Only give the user the number of books they ask for. Keep responses as short as possible"},
+        {'role': 'system', 'content': "/no_think You are a bookstore chatbot, you will be given the user's question. You can use the book_search tool to find books if the user asks about it. ONLY USE book_search WHEN NEEDED. Only give the user the number of books they ask for. Keep responses as short as possible"},
         {'role': 'user', 'content': query},
     ]
     
