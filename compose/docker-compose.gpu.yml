@@ -28,7 +28,7 @@ services:
             - ollama-storage:/root/.ollama
 
     backend:
-        build: ./backend
+        build: ../backend
         container_name: backend
         restart: unless-stopped
         environment:
@@ -36,7 +36,7 @@ services:
             - OLLAMA_MODEL=${OLLAMA_MODEL}
         ports: ["5050:5050"]
         volumes:
-            - ./backend/data.csv:/app/data.csv
+            - ../backend/data.csv:/app/data.csv
         depends_on:
             - ollama
 

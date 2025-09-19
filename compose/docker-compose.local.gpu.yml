@@ -1,16 +1,17 @@
 services:
-    cloudflared:
-        image: cloudflare/cloudflared:latest
-        restart: unless-stopped
-        command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN}
-        depends_on:
-            - backend
     ollama:
         image: ollama/ollama
         container_name: ollama
         restart: unless-stopped
         ports:
             - "11434:11434"
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: all
+                          capabilities: [gpu]
         entrypoint:
             [
                 "/bin/bash",
@@ -21,7 +22,7 @@ services:
             - ollama-storage:/root/.ollama
 
     backend:
-        build: ./backend
+        build: ../backend
         container_name: backend
         restart: unless-stopped
         environment:
@@ -29,7 +30,7 @@ services:
             - OLLAMA_MODEL=${OLLAMA_MODEL}
         ports: ["5050:5050"]
         volumes:
-            - ./backend/data.csv:/app/data.csv
+            - ../backend/data.csv:/app/data.csv
         depends_on:
             - ollama
 

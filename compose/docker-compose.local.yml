@@ -1,0 +1,31 @@
+services:
+    ollama:
+        image: ollama/ollama
+        container_name: ollama
+        restart: unless-stopped
+        ports:
+            - "11434:11434"
+        entrypoint:
+            [
+                "/bin/bash",
+                "-c",
+                "ollama serve & sleep 5 && ollama pull ${OLLAMA_MODEL} && wait",
+            ]
+        volumes:
+            - ollama-storage:/root/.ollama
+
+    backend:
+        build: ../backend
+        container_name: backend
+        restart: unless-stopped
+        environment:
+            - OLLAMA_API=http://ollama:11434/api/chat
+            - OLLAMA_MODEL=${OLLAMA_MODEL}
+        ports: ["5050:5050"]
+        volumes:
+            - ../backend/data.csv:/app/data.csv
+        depends_on:
+            - ollama
+
+volumes:
+    ollama-storage:
